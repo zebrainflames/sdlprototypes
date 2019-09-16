@@ -46,45 +46,55 @@ func processEvents() bool {
 	return false
 }
 
+func loadOptimizedSurface(path string) *sdl.Surface {
+	raw, err := img.Load(path)
+	check(err)
+	defer raw.Free()
+	optimized, err := raw.Convert(raw.Format, 0)
+	check(err)
+	return optimized
+}
+
+
+
 func main() {
 	err := sdl.Init(sdl.INIT_VIDEO)
 	check(err)
 	defer sdl.Quit()
 
-	// Create OpenGL accelerated window and set VSYNC on to limit resource usage - otherwise we'll hog up an entire
-	// CPU core.
+
 	// TODO: check documentation for sdl.RENDERER_ACCELERATED & OpenGL Rendering
 	// TODO: how to limit resource usage when vsync is off? Some sensible target fps?
+	// TODO: what's included in the sdl.WINDOW_SHOWN specification..?
 	window, err := sdl.CreateWindow("SDL testing",
 		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
 	check(err)
-	surface, err := window.GetSurface()
-	check(err)
-	imgFlags := img.INIT_PNG
-	img.Init(imgFlags)
-	flower, err := img.Load("walkthroughs/hitman1_machine.png")
-	check(err)
-	defer flower.Free()
-	optimized, err := flower.Convert(flower.Format, 0)
-	check(err)
-	defer optimized.Free()
-	stretch := &sdl.Rect{
-		X: 0,
-		Y: 0,
-		W: ScreenWidth,
-		H: ScreenHeight,
-	}
 
-	err = optimized.BlitScaled(nil, surface, stretch)
+
+
+	img.Init(img.INIT_PNG)
+	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	check(err)
+	// Create OpenGL accelerated window and set VSYNC on to limit resource usage - otherwise we'll hog up an entire
+	// CPU core.
+	// NOTE: Has to happen after getting an OpenGL context, e.g by creating the renderer above.
+	err = sdl.GLSetSwapInterval(1)
 	check(err)
 
-	err = window.UpdateSurface()
+	raw, err := img.Load("walkthroughs/hitman1_machine.png")
 	check(err)
+	tex, err := renderer.CreateTextureFromSurface(raw)
+	check(err)
+	raw.Free()
 
 	//main game loop
 	for quit := false; !quit; quit = processEvents() {
-
+		renderer.Clear()
+		renderer.Copy(tex, nil, nil)
+		renderer.Present()
 	}
+	err = tex.Destroy()
+	check(err)
 
 	err = window.Destroy()
 	check(err)
