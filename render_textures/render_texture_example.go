@@ -1,4 +1,4 @@
-package main
+package render_textures
 
 import (
 	"fmt"
@@ -83,27 +83,20 @@ func main() {
 	err = sdl.GLSetSwapInterval(1)
 	check(err)
 
+	raw, err := img.Load("walkthroughs/hitman1_machine.png")
+	check(err)
+	tex, err := renderer.CreateTextureFromSurface(raw)
+	check(err)
+	raw.Free()
 
 	//main game loop
 	for quit := false; !quit; quit = processEvents() {
-		_ =renderer.Clear()
-
-		//err := renderer.SetDrawColor(0xFF,0xFF,0xFF,0xFF)
-		fillRect := &sdl.Rect{
-			X: ScreenWidth / 4.0,
-			Y: ScreenHeight / 4.0,
-			W: ScreenWidth / 2.0,
-			H: ScreenHeight / 2.0,
-		}
-		err := renderer.SetDrawColor(0xFF,0x00,0x00,0x00)
-		err = renderer.FillRect(fillRect)
-		err = renderer.SetDrawColor(0x00,0xFF,0x00,0x00)
-		err = renderer.DrawLine(0,ScreenHeight/2,ScreenWidth,ScreenHeight/2)
-		err = renderer.SetDrawColor(0xFF,0xFF,0xFF,0xFF)
-		check(err)
-
+		renderer.Clear()
+		renderer.Copy(tex, nil, nil)
 		renderer.Present()
 	}
+	err = tex.Destroy()
+	check(err)
 
 	err = window.Destroy()
 	check(err)
