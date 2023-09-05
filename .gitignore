@@ -10,3 +10,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+## Don't want to copy external deps to git...
+pixel_rendering_tests/lib/
+pixel_rendering_tests/include/
+SDL2.dll
