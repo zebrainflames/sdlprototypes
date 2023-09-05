@@ -1,15 +1,16 @@
-package render_textures
+package main
 
 import (
 	"fmt"
-	log "github.com/mgutz/logxi/v1"
+	"log"
+	"runtime"
+
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
-	"runtime"
 )
 
 const (
-	ScreenWidth = 640
+	ScreenWidth  = 640
 	ScreenHeight = 480
 )
 
@@ -36,7 +37,7 @@ func processEvents() bool {
 				t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
 		case *sdl.KeyboardEvent:
 			fmt.Printf("[%d ms] KeyboardEvent\ttype:%d\tstate:%d\tkeysym:%v\trepeat:%d\n",
-				t.Timestamp, t.Type, t.State,t.Keysym,t.Repeat)
+				t.Timestamp, t.Type, t.State, t.Keysym, t.Repeat)
 			if t.Keysym.Sym == sdl.K_q {
 				fmt.Println("Quit pressed!")
 				return true
@@ -55,27 +56,22 @@ func loadOptimizedSurface(path string) *sdl.Surface {
 	return optimized
 }
 
-
-
 func main() {
 	err := sdl.Init(sdl.INIT_VIDEO)
 	check(err)
 	defer sdl.Quit()
 
-
 	// TODO: check documentation for sdl.RENDERER_ACCELERATED & OpenGL Rendering
 	// TODO: how to limit resource usage when vsync is off? Some sensible target fps?
 	// TODO: what's included in the sdl.WINDOW_SHOWN specification..?
 	window, err := sdl.CreateWindow("SDL testing",
-		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN)
+		sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, ScreenWidth, ScreenHeight, sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
 	check(err)
-
-
 
 	img.Init(img.INIT_PNG)
 	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	check(err)
-	err = renderer.SetDrawColor(0xFF,0xFF,0xFF,0xFF)
+	err = renderer.SetDrawColor(0xFF, 0xFF, 0xFF, 0xFF)
 	check(err)
 	// Create OpenGL accelerated window and set VSYNC on to limit resource usage - otherwise we'll hog up an entire
 	// CPU core.
