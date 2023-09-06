@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"runtime"
-	"sync"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -69,12 +67,14 @@ func main() {
 	fps := 60.0
 
 	for !quit {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func(pixels []byte, wgrp *sync.WaitGroup) {
-			updatePixels(pixels)
-			wgrp.Done()
-		}(pixels, &wg)
+		/*
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func(pixels []byte, wgrp *sync.WaitGroup) {
+				updatePixels(pixels)
+				wgrp.Done()
+			}(pixels, &wg)
+		*/
 		var (
 			x int32
 			y int32
@@ -85,7 +85,7 @@ func main() {
 			case *sdl.QuitEvent:
 				fmt.Println("Quitting game")
 				quit = true
-				goto cleanup
+				//goto cleanup
 			case *sdl.MouseButtonEvent:
 				fmt.Printf("[%d ms] MouseButton\ttype:%d\tid:%d\tx:%d\ty:%d\tbutton:%d\tstate:%d\n",
 					t.Timestamp, t.Type, t.Which, t.X, t.Y, t.Button, t.State)
@@ -120,13 +120,12 @@ func main() {
 			fmt.Println("FPS:", fps)
 		}
 
-		/*
-			if !mouseButtonDown {
-				updatePixels(pixels)
-			}*/
+		if !mouseButtonDown {
+			updatePixels(pixels)
+		}
 
 		// wait for pixel updating goroutines to finish:
-		wg.Wait()
+		//wg.Wait()
 		err = tex.Update(nil, pixels, ScreenWidth*4)
 
 		check(err)
@@ -143,7 +142,6 @@ func main() {
 	}
 
 	// non-deferrable cleanup:
-cleanup:
 	tex.Destroy()
 	err = renderer.Destroy()
 	check(err)
@@ -172,25 +170,27 @@ func updatePixels(pixels []byte) {
 	var updateFromTo = func(pixels []byte, from, to int) {
 		for i := from; i < to; i += 4 {
 			//set everything excep alpha to random value for grayscale brightness changes per pixel
-			val := byte(math.Abs(math.Sin(float64(frameCounter)/100.0)) * 255)
+			//val := byte(math.Abs(math.Sin(float64(frameCounter)/100.0)) * 255)
+			var val byte = 0x22
 			pixels[i] = val
 			pixels[i+1] = randByte()
 			pixels[i+2] = val
 			//pixels[i+3] = 0x22
 		}
 	}
-	//updateFromTo(pixels, 0, len(pixels))
+	updateFromTo(pixels, 0, len(pixels))
 	// Split the work to four goroutines and have each of them use updateFromTo
-	var wg sync.WaitGroup
-	const numGoroutines = 12
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func(pixels []byte, from, to int, wgrp *sync.WaitGroup) {
-			updateFromTo(pixels, from, to)
-			wgrp.Done()
-		}(pixels, i*len(pixels)/numGoroutines, (i+1)*len(pixels)/numGoroutines, &wg)
-	}
-	wg.Wait()
+	/*
+		var wg sync.WaitGroup
+		const numGoroutines = 12
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(pixels []byte, from, to int, wgrp *sync.WaitGroup) {
+				updateFromTo(pixels, from, to)
+				wgrp.Done()
+			}(pixels, i*len(pixels)/numGoroutines, (i+1)*len(pixels)/numGoroutines, &wg)
+		}
+		wg.Wait()*/
 }
 
 func setPixelsToBlack(pixels []byte, x int32, y int32, brushsize int32) {
