@@ -69,7 +69,7 @@ func main() {
 	check(err)
 
 	openglCtx := sdl.GLContext(window)
-	sdl.GLMakeCurrent(window, openglCtx)
+	//sdl.GL
 	defer sdl.GLDeleteContext(openglCtx)
 
 	img.Init(img.INIT_PNG)

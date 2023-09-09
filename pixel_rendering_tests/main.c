@@ -6,7 +6,7 @@
 
 #include <SDL2/SDL.h>
 
-#define TICK_INTERVAL 5
+#define TICK_INTERVAL 2
 static Uint32 next_time;
 
 const int WINDOW_WIDTH = 1200;
@@ -46,18 +46,41 @@ int main(int argc, char *argv[]) {
     if (!tex)
         printf("PANIC:!\n");
 
+    SDL_Rect a = {.h = 10, .w = 10, .x = 10, .y = 10};
+    SDL_Rect b = {.h = 10, .w = 10, .x = 100, .y = 100};
+    SDL_Rect c = {.h = 10, .w = 10, .x = 150, .y = 150};
+    SDL_Rect d = {.h = 10, .w = 10, .x = 200, .y = 200};
+    SDL_Rect rects[4] = {a,b,c,d};
+
     int pixelAmount = 4 * WINDOW_HEIGHT * WINDOW_WIDTH;
     uint8_t *pixels = (uint8_t*)malloc(pixelAmount * sizeof(uint8_t));
+    SDL_Point p;
+    printf("Trying to allocate points\n");
+    SDL_Point *points = (SDL_Point*)malloc(WINDOW_WIDTH*WINDOW_HEIGHT * sizeof(SDL_Point));
+    int pointAmount = WINDOW_HEIGHT*WINDOW_WIDTH;
     //uint8_t *locked_pixels = NULL;
     //SDL_FreeSurface(surface);
 
     // seed random number gens...
     srand(time(0));
     SetPixelsToRandomColor(pixels, pixelAmount);
+
+    // copy pixel colors to points as a test...
+    for (int i = 0; i < pointAmount; i += 1) {
+        int y = i/WINDOW_WIDTH;
+        int x = i%WINDOW_WIDTH;
+        points[i].x = x;
+        points[i].y = y;
+    }
+
     Uint32 ticks = SDL_GetTicks();
     Uint32 accum = 0;
     next_time = SDL_GetTicks() + TICK_INTERVAL;
     bool mouseButtonDown = false;
+    Uint32 color = {0};
+    SDL_PixelFormat *format = SDL_AllocFormat(SDL_PIXELFORMAT_ARGB8888);
+    color = SDL_MapRGBA(format, 120,180,220,255);
+    printf("Starting loopsies..\n");
     while (!quit) {
         SDL_Event event;
         int x, y;
@@ -86,6 +109,7 @@ int main(int argc, char *argv[]) {
         Uint32 dt = newTicks - ticks;
         ticks = newTicks;
         accum += dt;
+
         // every 100th frame, print FPS and reset framecounter
         if (accum >= 1000)  {
             printf("FPS: %d\n", frameCounter);
@@ -94,7 +118,8 @@ int main(int argc, char *argv[]) {
         }
         // Update pixel values...
         if (!mouseButtonDown) {
-            UpdatePixelValues(pixels, pixelAmount);
+            //UpdatePixelValues(pixels, pixelAmount);
+            SDL_FillRects(surface, rects, 5, color);
         } else {
             paintBrush(pixels, x, y, 10);
         }
@@ -120,12 +145,23 @@ int main(int argc, char *argv[]) {
             quit = true;
             printf("Copy to renderer failed!\n");
         }
+
+        SDL_SetRenderDrawColor(renderer, 0,220,245,255);
+        if (SDL_RenderDrawPoints(renderer, points, pointAmount/2) < 0) {
+            printf("Error in drwaing points...\n");
+        }
+        SDL_SetRenderDrawColor(renderer, 244,220,120,255);
+        SDL_RenderDrawRects(renderer, rects, 4);
+        SDL_RenderFillRects(renderer, rects,4);
+        
+        //SDL_RenderDrawRectsF(renderer, rects, 4);
+
         SDL_RenderPresent(renderer);
         SDL_GL_SwapWindow(window);
         // Using SDL_Delay, tick_left() and next_time to smooth out the frame rate, as we're not
         // VSYNCing
-        //SDL_Delay(time_left());
-        //next_time += TICK_INTERVAL;
+        SDL_Delay(time_left());
+        next_time += TICK_INTERVAL;
     }
 
     //
@@ -134,6 +170,8 @@ int main(int argc, char *argv[]) {
     // remember to free pixel array
     printf("Exiting, cleaning resources\n");
     free(pixels);
+    free(points);
+    SDL_FreeFormat(format);
     SDL_FreeSurface(surface);
     SDL_DestroyTexture(tex);
     SDL_DestroyRenderer(renderer);
